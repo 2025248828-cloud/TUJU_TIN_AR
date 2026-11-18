@@ -1,0 +1,275 @@
+
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+  <title>Tuju Tin AR</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background: #d9f1df;
+    }
+
+    /* Paparan Kivicube di belakang */
+    #kivicubeScene {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      z-index: 0;
+    }
+
+    /* Lapisan permainan di depan Kivicube */
+    #gameOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    #tajuk {
+      position: absolute;
+      top: 25px;
+      left: 0;
+      width: 100%;
+      margin: 0;
+      text-align: center;
+      font-size: 28px;
+      color: #222;
+      text-shadow: 0 1px 3px white;
+    }
+
+    #bola {
+      position: absolute;
+      left: 50%;
+      bottom: 90px;
+      width: 90px;
+      height: 90px;
+      object-fit: contain;
+      transform: translateX(-50%);
+      z-index: 30;
+      pointer-events: auto;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-drag: none;
+      cursor: grab;
+    }
+
+    #panduan {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .titik {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: #888;
+      border: 1px solid #555;
+      border-radius: 50%;
+    }
+
+    #arahan {
+      position: absolute;
+      bottom: 30px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-weight: bold;
+      color: #222;
+      text-shadow: 0 1px 3px white;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Paparan AR Kivicube -->
+  <iframe
+    id="kivicubeScene"
+    src="https://www.kivicube.com/scenes-beta/snK6b8gx40Dv9gEDqts1qpQkQbcXFKrR"
+    title="Tuju Tin Kivicube AR"
+    allow="camera; microphone; autoplay; fullscreen; gyroscope; accelerometer; xr-spatial-tracking">
+  </iframe>
+
+  <!-- Paparan permainan di atas AR -->
+  <div id="gameOverlay">
+
+    <h1 id="tajuk">TUJU TIN AR</h1>
+
+    <div id="panduan"></div>
+
+    <img
+      id="bola"
+      src="bola.png"
+      alt="Bola merah"
+      draggable="false">
+
+    <div id="arahan">TARIK & LEPASKAN</div>
+
+  </div>
+
+  <script>
+    const bola = document.getElementById("bola");
+    const panduan = document.getElementById("panduan");
+
+    let sedangTarik = false;
+    let sedangTerbang = false;
+
+    let mulaX = 0;
+    let mulaY = 0;
+
+    let tarikX = 0;
+    let tarikY = 0;
+
+    function letakBola(x, y) {
+      bola.style.transform =
+        `translate(calc(-50% + ${x}px), ${y}px)`;
+    }
+
+    function padamPanduan() {
+      panduan.innerHTML = "";
+    }
+
+    function lukisPanduan() {
+      padamPanduan();
+
+      const rect = bola.getBoundingClientRect();
+
+      const tengahX = rect.left + rect.width / 2;
+      const tengahY = rect.top + rect.height / 2;
+
+      const vx = -tarikX * 0.22;
+      const vy = -tarikY * 0.22;
+
+      for (let i = 1; i <= 12; i++) {
+        const t = i * 3;
+
+        const x = tengahX + vx * t;
+        const y = tengahY + vy * t + 0.125 * t * t;
+
+        const titik = document.createElement("div");
+
+        titik.className = "titik";
+        titik.style.left = `${x - 5}px`;
+        titik.style.top = `${y - 5}px`;
+
+        panduan.appendChild(titik);
+      }
+    }
+
+    bola.addEventListener("pointerdown", (e) => {
+      if (sedangTerbang) return;
+
+      sedangTarik = true;
+
+      mulaX = e.clientX;
+      mulaY = e.clientY;
+
+      tarikX = 0;
+      tarikY = 0;
+
+      bola.setPointerCapture(e.pointerId);
+      bola.style.cursor = "grabbing";
+
+      e.preventDefault();
+    });
+
+    bola.addEventListener("pointermove", (e) => {
+      if (!sedangTarik) return;
+
+      tarikX = e.clientX - mulaX;
+      tarikY = e.clientY - mulaY;
+
+      const jarak = Math.hypot(tarikX, tarikY);
+
+      if (jarak > 120) {
+        tarikX = (tarikX / jarak) * 120;
+        tarikY = (tarikY / jarak) * 120;
+      }
+
+      letakBola(tarikX, tarikY);
+      lukisPanduan();
+    });
+
+    bola.addEventListener("pointerup", () => {
+      if (!sedangTarik) return;
+
+      sedangTarik = false;
+      sedangTerbang = true;
+
+      padamPanduan();
+
+      bola.style.cursor = "default";
+
+      let x = tarikX;
+      let y = tarikY;
+
+      let vx = -tarikX * 0.22;
+      let vy = -tarikY * 0.22;
+
+      let frame = 0;
+
+      function terbang() {
+        x += vx;
+        y += vy;
+
+        vy += 0.25;
+
+        letakBola(x, y);
+
+        frame++;
+
+        if (frame < 90) {
+          requestAnimationFrame(terbang);
+        } else {
+          setTimeout(() => {
+            tarikX = 0;
+            tarikY = 0;
+
+            letakBola(0, 0);
+
+            sedangTerbang = false;
+            bola.style.cursor = "grab";
+          }, 500);
+        }
+      }
+
+      requestAnimationFrame(terbang);
+    });
+
+    bola.addEventListener("pointercancel", () => {
+      sedangTarik = false;
+
+      tarikX = 0;
+      tarikY = 0;
+
+      padamPanduan();
+      letakBola(0, 0);
+
+      bola.style.cursor = "grab";
+    });
+
+    bola.addEventListener("error", () => {
+      console.error("Gambar bola.png tidak dijumpai.");
+    });
+
+  </script>
+
+</body>
+</html>
