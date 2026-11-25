@@ -531,8 +531,8 @@ if (!bersedia) {
   if (bersedia) {
     jatuhkanTin();
   } else {
-    status("Bola kena sasaran, tetapi AR belum bersedia.");
-    setTimeout(resetBola, 500);
+    status("Bola kena sasaran! Sambungan tin AR belum bersedia.");
+    bubble.style.display = "block";
   }
 
   return;
