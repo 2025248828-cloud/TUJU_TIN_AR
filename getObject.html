@@ -1,0 +1,610 @@
+
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+  <title>Tuju Tin AR</title>
+
+  <script src="https://www.kivicube.com/lib/iframe-plugin.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background: #d9f1df;
+    }
+
+    #kivicubeScene {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      z-index: 0;
+    }
+
+    #gameOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    #tajuk {
+      position: absolute;
+      top: 20px;
+      width: 100%;
+      margin: 0;
+      text-align: center;
+      font-size: 25px;
+      color: #222;
+      text-shadow: 0 1px 3px white;
+    }
+
+    #status {
+      position: absolute;
+      top: 62px;
+      left: 10%;
+      width: 80%;
+      padding: 7px;
+      background: rgba(255,255,255,0.85);
+      border-radius: 10px;
+      text-align: center;
+      font-size: 12px;
+    }
+
+    #bola {
+      position: absolute;
+      left: 50%;
+      bottom: 90px;
+      width: 90px;
+      height: 90px;
+      object-fit: contain;
+      transform: translateX(-50%);
+      z-index: 30;
+      pointer-events: auto;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-drag: none;
+      cursor: grab;
+    }
+
+    #panduan {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .titik {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: #888;
+      border: 1px solid #555;
+      border-radius: 50%;
+    }
+
+    #arahan {
+      position: absolute;
+      bottom: 30px;
+      width: 100%;
+      text-align: center;
+      font-weight: bold;
+      color: #222;
+      text-shadow: 0 1px 3px white;
+    }
+
+    /* Kawasan sasaran anggaran pada skrin */
+    #sasaran {
+      position: absolute;
+      left: 15%;
+      top: 15%;
+      width: 70%;
+      height: 55%;
+      border: 2px dashed rgba(255,255,0,0.65);
+      border-radius: 15px;
+      pointer-events: none;
+    }
+
+    /* TEXT BUBBLE */
+    #infoTujuTin {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 85%;
+      max-width: 350px;
+      padding: 22px;
+      background: #fff8e7;
+      color: #3b2414;
+      border: 3px solid #b77936;
+      border-radius: 22px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+      text-align: center;
+      z-index: 100;
+      pointer-events: auto;
+    }
+
+    #infoTujuTin h2 {
+      margin-top: 0;
+      font-size: 21px;
+      color: #8b4513;
+    }
+
+    #infoTujuTin p {
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .butangBubble {
+      padding: 12px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 10px;
+      background: #b77936;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- KIVICUBE AR -->
+  <iframe
+    id="kivicubeScene"
+    scene-id="snK6b8gx40Dv9gEDqts1qpQkQbcXFKrR"
+    title="Tuju Tin Kivicube AR">
+  </iframe>
+
+  <div id="gameOverlay">
+
+    <h1 id="tajuk">TUJU TIN AR</h1>
+
+    <div id="status">
+      Menunggu AR...
+    </div>
+
+    <div id="sasaran"></div>
+
+    <div id="panduan"></div>
+
+    <img
+      id="bola"
+      src="https://2025248828-cloud.github.io/TUJU_TIN_AR/bola.png"
+      alt="Bola merah"
+      draggable="false">
+
+    <div id="arahan">TARIK & LEPASKAN</div>
+
+    <!-- TEXT BUBBLE -->
+    <div id="infoTujuTin">
+      <h2>KENALI TUJU TIN!</h2>
+
+      <p>
+        Tuju Tin ialah permainan tradisional
+        Malaysia yang dimainkan dengan
+        membaling bola ke arah tin yang
+        disusun bertingkat.
+      </p>
+
+      <p>
+        Permainan ini menguji ketepatan,
+        kepantasan dan kerjasama pemain.
+      </p>
+
+      <button
+        class="butangBubble"
+        id="tutupBubble">
+        TUTUP
+      </button>
+
+      <button
+        class="butangBubble"
+        id="mainSemula">
+        MAIN SEMULA
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    const iframeEl =
+      document.getElementById("kivicubeScene");
+
+    const bola =
+      document.getElementById("bola");
+
+    const panduan =
+      document.getElementById("panduan");
+
+    const statusEl =
+      document.getElementById("status");
+
+    const sasaran =
+      document.getElementById("sasaran");
+
+    const bubble =
+      document.getElementById("infoTujuTin");
+
+    let api = null;
+    let sceneInfo = null;
+
+    let semuaTin = [];
+
+    const namaTin = [
+      "tin 3-2",
+      "tin 3-1",
+      "tin 3",
+      "tin 2-1",
+      "tin 2",
+      "tin 1"
+    ];
+
+    let sedangTarik = false;
+    let sedangTerbang = false;
+    let sudahJatuh = false;
+    let bersedia = false;
+
+    let mulaX = 0;
+    let mulaY = 0;
+    let tarikX = 0;
+    let tarikY = 0;
+
+    const posisiAsal = new Map();
+
+    function status(teks) {
+      statusEl.textContent = teks;
+      console.log(teks);
+    }
+
+    function tunggu(ms) {
+      return new Promise(resolve =>
+        setTimeout(resolve, ms)
+      );
+    }
+
+    // SAMBUNGAN API
+    iframeEl.addEventListener("ready", event => {
+      api = event.detail.api;
+      sceneInfo = event.detail.sceneInfo;
+
+      status("Kivicube bersedia...");
+    });
+
+    // CARI SEMUA TIN
+    iframeEl.addEventListener("loadSceneEnd", async () => {
+      try {
+        semuaTin = [];
+        bersedia = false;
+
+        for (const nama of namaTin) {
+          const info = sceneInfo.objects.find(
+            item => item.name === nama
+          );
+
+          if (!info) {
+            console.warn("Tin tidak dijumpai:", nama);
+            continue;
+          }
+
+          const objek = await api.getObject(nama);
+
+          if (objek) {
+            semuaTin.push({ nama, objek });
+          }
+        }
+
+        bersedia = semuaTin.length === 6;
+
+        status(
+          bersedia
+            ? "6 tin sedia! Tarik bola."
+            : semuaTin.length + "/6 tin dijumpai."
+        );
+
+      } catch (error) {
+        console.error(error);
+        status("Ralat mencari tin: " + error.message);
+      }
+    });
+
+    // BACA POSISI ASAL
+    async function bacaPosisi(item) {
+      if (posisiAsal.has(item.nama)) {
+        return posisiAsal.get(item.nama);
+      }
+
+      if (typeof api.getPosition !== "function") {
+        return null;
+      }
+
+      const p = await api.getPosition(item.objek);
+
+      const data = Array.isArray(p)
+        ? { x: p[0], y: p[1], z: p[2] }
+        : (p.position || p);
+
+      if (!data) return null;
+
+      const asal = {
+        x: Number(data.x),
+        y: Number(data.y),
+        z: Number(data.z)
+      };
+
+      if (!Object.values(asal).every(Number.isFinite)) {
+        return null;
+      }
+
+      posisiAsal.set(item.nama, asal);
+      return asal;
+    }
+
+    // SEMUA TIN JATUH
+    async function jatuhkanTin() {
+      if (!bersedia || sudahJatuh) return;
+
+      status("Bola kena tin!");
+
+      try {
+        const posisi = await Promise.all(
+          semuaTin.map(item => bacaPosisi(item))
+        );
+
+        if (posisi.some(p => !p)) {
+          status(
+            "Posisi tin belum dapat dibaca. " +
+            "Perlu kalibrasi koordinat."
+          );
+          return;
+        }
+
+        sudahJatuh = true;
+
+        const arah = [-1, 1, -1, 1, -1, 1];
+
+        for (let frame = 1; frame <= 20; frame++) {
+          const t = frame / 20;
+
+          await Promise.all(
+            semuaTin.map((item, i) => {
+              const p = posisi[i];
+
+              return api.setPosition(
+                item.objek,
+                p.x + arah[i] * 0.55 * t,
+                p.y - 0.8 * t * t,
+                p.z
+              );
+            })
+          );
+
+          await tunggu(25);
+        }
+
+        status("TAHNIAH! Semua tin jatuh!");
+
+        // PAPARKAN TEXT BUBBLE
+        bubble.style.display = "block";
+
+      } catch (error) {
+        console.error(error);
+        status("Ralat animasi: " + error.message);
+      }
+    }
+
+    // KAWAL BOLA
+    function letakBola(x, y) {
+      bola.style.transform =
+        `translate(calc(-50% + ${x}px), ${y}px)`;
+    }
+
+    function padamPanduan() {
+      panduan.innerHTML = "";
+    }
+
+    function lukisPanduan() {
+      padamPanduan();
+
+      const rect = bola.getBoundingClientRect();
+
+      const tengahX = rect.left + rect.width / 2;
+      const tengahY = rect.top + rect.height / 2;
+
+      const vx = -tarikX * 0.22;
+      const vy = -tarikY * 0.22;
+
+      for (let i = 1; i <= 12; i++) {
+        const t = i * 3;
+
+        const x = tengahX + vx * t;
+        const y = tengahY + vy * t + 0.125 * t * t;
+
+        const titik = document.createElement("div");
+
+        titik.className = "titik";
+        titik.style.left = `${x - 5}px`;
+        titik.style.top = `${y - 5}px`;
+
+        panduan.appendChild(titik);
+      }
+    }
+
+    bola.addEventListener("pointerdown", e => {
+      if (sedangTerbang || sudahJatuh) {
+    return;
+}
+
+if (!bersedia) {
+    status("Mod ujian bola - AR belum bersedia.");
+}
+
+      sedangTarik = true;
+
+      mulaX = e.clientX;
+      mulaY = e.clientY;
+
+      tarikX = 0;
+      tarikY = 0;
+
+      bola.setPointerCapture(e.pointerId);
+      bola.style.cursor = "grabbing";
+
+      e.preventDefault();
+    });
+
+    bola.addEventListener("pointermove", e => {
+      if (!sedangTarik) return;
+
+      tarikX = e.clientX - mulaX;
+      tarikY = e.clientY - mulaY;
+
+      const jarak = Math.hypot(tarikX, tarikY);
+
+      if (jarak > 120) {
+        tarikX = tarikX / jarak * 120;
+        tarikY = tarikY / jarak * 120;
+      }
+
+      letakBola(tarikX, tarikY);
+      lukisPanduan();
+    });
+
+    bola.addEventListener("pointerup", () => {
+      if (!sedangTarik) return;
+
+      sedangTarik = false;
+      sedangTerbang = true;
+
+      padamPanduan();
+
+      let x = tarikX;
+      let y = tarikY;
+
+      let vx = -tarikX * 0.40;
+      let vy = -tarikY * 0.40;
+
+      let frame = 0;
+
+      const asal = bola.getBoundingClientRect();
+      const pusatAsalX =
+        asal.left + asal.width / 2 - x;
+      const pusatAsalY =
+        asal.top + asal.height / 2 - y;
+
+      function terbang() {
+        x += vx;
+        y += vy;
+        vy += 0.10;
+
+        letakBola(x, y);
+
+        const rect = sasaran.getBoundingClientRect();
+
+        const pusatX = pusatAsalX + x;
+        const pusatY = pusatAsalY + y;
+
+        const kena =
+          pusatX >= rect.left &&
+          pusatX <= rect.right &&
+          pusatY >= rect.top &&
+          pusatY <= rect.bottom;
+
+        if (kena && bersedia) {
+    sedangTerbang = false;
+
+    if (bersedia) {
+        jatuhkanTin();
+    } else {
+        status("Bola kena sasaran, tetapi AR belum bersedia.");
+        resetBola();
+    }
+
+    return;
+}
+
+        frame++;
+
+        if (frame < 90) {
+          requestAnimationFrame(terbang);
+        } else {
+          setTimeout(resetBola, 500);
+        }
+      }
+
+      requestAnimationFrame(terbang);
+    });
+
+    function resetBola() {
+      tarikX = 0;
+      tarikY = 0;
+      sedangTarik = false;
+      sedangTerbang = false;
+      letakBola(0, 0);
+      bola.style.cursor = "grab";
+    }
+
+    bola.addEventListener("pointercancel", () => {
+      padamPanduan();
+      resetBola();
+    });
+
+    // TUTUP TEXT BUBBLE
+    document.getElementById("tutupBubble")
+      .addEventListener("click", () => {
+        bubble.style.display = "none";
+      });
+
+    // MAIN SEMULA
+    document.getElementById("mainSemula")
+      .addEventListener("click", async () => {
+        bubble.style.display = "none";
+
+        try {
+          for (const item of semuaTin) {
+            const p = posisiAsal.get(item.nama);
+
+            if (p) {
+              await api.setPosition(
+                item.objek,
+                p.x,
+                p.y,
+                p.z
+              );
+            }
+          }
+
+          sudahJatuh = false;
+          resetBola();
+          status("Permainan bermula semula!");
+
+        } catch (error) {
+          console.error(error);
+          status("Ralat reset: " + error.message);
+        }
+      });
+
+    bola.addEventListener("error", () => {
+      console.error("Gambar bola.png tidak dijumpai.");
+    });
+  </script>
+
+</body>
+</html>
+
+
