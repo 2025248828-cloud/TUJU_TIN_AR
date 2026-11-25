@@ -446,10 +446,13 @@
     }
 
     bola.addEventListener("pointerdown", e => {
-      if (!bersedia || sedangTerbang || sudahJatuh) {
-        status("Tunggu tin bersedia.");
-        return;
-      }
+      if (sedangTerbang || sudahJatuh) {
+    return;
+}
+
+if (!bersedia) {
+    status("Mod ujian bola - AR belum bersedia.");
+}
 
       sedangTarik = true;
 
@@ -493,8 +496,8 @@
       let x = tarikX;
       let y = tarikY;
 
-      let vx = -tarikX * 0.22;
-      let vy = -tarikY * 0.22;
+      let vx = -tarikX * 0.40;
+      let vy = -tarikY * 0.40;
 
       let frame = 0;
 
@@ -507,7 +510,7 @@
       function terbang() {
         x += vx;
         y += vy;
-        vy += 0.25;
+        vy += 0.10;
 
         letakBola(x, y);
 
@@ -522,11 +525,18 @@
           pusatY >= rect.top &&
           pusatY <= rect.bottom;
 
-        if (kena) {
-          sedangTerbang = false;
-          jatuhkanTin();
-          return;
-        }
+        if (kena && bersedia) {
+    sedangTerbang = false;
+
+    if (bersedia) {
+        jatuhkanTin();
+    } else {
+        status("Bola kena sasaran, tetapi AR belum bersedia.");
+        resetBola();
+    }
+
+    return;
+}
 
         frame++;
 
