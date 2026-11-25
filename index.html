@@ -496,8 +496,8 @@ if (!bersedia) {
       let x = tarikX;
       let y = tarikY;
 
-      let vx = -tarikX * 0.40;
-      let vy = -tarikY * 0.40;
+      let vx = -tarikX * 0.75;
+      let vy = -tarikY * 0.75;
 
       let frame = 0;
 
@@ -510,7 +510,7 @@ if (!bersedia) {
       function terbang() {
         x += vx;
         y += vy;
-        vy += 0.10;
+        vy += 0.06;
 
         letakBola(x, y);
 
