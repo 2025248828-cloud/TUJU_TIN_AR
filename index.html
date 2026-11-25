@@ -525,17 +525,17 @@ if (!bersedia) {
           pusatY >= rect.top &&
           pusatY <= rect.bottom;
 
-        if (kena && bersedia) {
-    sedangTerbang = false;
+        if (kena) {
+  sedangTerbang = false;
 
-    if (bersedia) {
-        jatuhkanTin();
-    } else {
-        status("Bola kena sasaran, tetapi AR belum bersedia.");
-        resetBola();
-    }
+  if (bersedia) {
+    jatuhkanTin();
+  } else {
+    status("Bola kena sasaran, tetapi AR belum bersedia.");
+    setTimeout(resetBola, 500);
+  }
 
-    return;
+  return;
 }
 
         frame++;
